@@ -8,13 +8,16 @@ public class LukeRobot extends Robot {
 	
 	double bltPwr;
 	boolean targetLocated;
+	double confidenceLevel;
+	boolean hasDanced;
 
-	
+		
     public void run() {
         setAdjustRadarForRobotTurn(true);
-		bltPwr = 2;
+		bltPwr = 3;
 		targetLocated = false;
-
+		hasDanced = false;
+		
         while (true) {
 			if(Math.random() > 0.5){
 			back(50);
@@ -27,19 +30,26 @@ public class LukeRobot extends Robot {
 				turnGunRight(20);
 				turnGunLeft(20);
 			}
+			//System.out.println("Confidence Level: " + confidenceLevel);
         }
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-        double absBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
+        if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
+			//if the enemy robot has zero power, and there are no others, do a victory dance then blast em'
+			victoryDance();
+		} else {
+
+		double absBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
         double enemyBearingDeg = e.getBearing();
-		double distance = e.getDistance();
+		double enemyDistance = e.getDistance();
 		double enemyHeading = e.getHeadingRadians();
         double enemyVelocity = e.getVelocity();
-		
+
+
 		targetLocated = true;
 
-		if(!(enemyBearingDeg >= 50 && enemyBearingDeg <= 130) || !(enemyBearingDeg >= 230 && enemyBearingDeg <= 310)){
+		if(!(enemyBearingDeg >= 45 && enemyBearingDeg <= 135) || !(enemyBearingDeg >= 225 && enemyBearingDeg <= 315)){
 			if(enemyBearingDeg < 180){
 				setAdjustRadarForRobotTurn(false);
 				turnRight(enemyBearingDeg - 90);
@@ -51,14 +61,18 @@ public class LukeRobot extends Robot {
 			}
 		}
 		
-		//confidance rating:
+		
+		confidenceLevel = (((1414-enemyDistance)/1414));
+		if(enemyVelocity == 0){confidenceLevel = 1.00;}
+
+		System.out.println("Conf: " + confidenceLevel);
 		
         // Calculate the predicted future x, y position of the enemy
-        double x = getX() + distance * Math.sin(absBearing);
-        double y = getY() + distance * Math.cos(absBearing);
+        double x = getX() + enemyDistance * Math.sin(absBearing);
+        double y = getY() + enemyDistance * Math.cos(absBearing);
 
         // Calculate the time it takes for the bullet to travel to the predicted position
-        double bulletTime = distance / (20 - 3 * bltPwr);
+        double bulletTime = enemyDistance / (20 - 3 * (bltPwr*confidenceLevel));
 
         // Predict the future x, y position of the enemy
         x += bulletTime * enemyVelocity * Math.sin(enemyHeading);
@@ -69,12 +83,12 @@ public class LukeRobot extends Robot {
 
         // Turn the gun to the calculated angle
         turnGunRight(normalizeRelativeAngle(turnAngle - getGunHeading()));
-
+		
         // Fire at the predicted position
-        fire(bltPwr);
+        fire((bltPwr*confidenceLevel));
 		
 		targetLocated = false;
-    }
+    } }
 
     private double normalizeRelativeAngle(double angle) {
         while (angle > 180) {
@@ -93,4 +107,26 @@ public class LukeRobot extends Robot {
     public void onHitWall(HitWallEvent e) {
         
     }
+	
+	public void victoryDance(){
+		setAdjustGunForRobotTurn(true);
+		setAdjustRadarForRobotTurn(true);
+		turnLeft(180);
+		turnRight(180);
+		ahead(100);
+		turnLeft(180);
+		turnRight(180);
+		back(100);
+		turnLeft(180);
+		turnRight(180);
+		turnRight(90);
+		ahead(50);
+		turnLeft(180);
+		turnRight(180);
+		back(50);
+		setAdjustGunForRobotTurn(false);
+		setAdjustRadarForRobotTurn(false);
+		//Prevent me from getting trapped in infinite dance mode, even though the other robot would die before me eventually
+		hasDanced = true;
+	}
 }
