@@ -10,15 +10,19 @@ public class LukeRobot extends Robot {
 	boolean targetLocated;
 	double confidenceLevel;
 	boolean hasDanced;
-
+	boolean gettingRammed;
 		
     public void run() {
         setAdjustRadarForRobotTurn(true);
 		bltPwr = 3;
 		targetLocated = false;
 		hasDanced = false;
+		gettingRammed = false;
 		
         while (true) {
+			if(gettingRammed){
+			fire(3);
+			}
 			if(Math.random() > 0.5){
 			back(50);
 			} else {
@@ -35,12 +39,17 @@ public class LukeRobot extends Robot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-        if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
+        
+		
+		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
 			//if the enemy robot has zero power, and there are no others, do a victory dance then blast em'
 			victoryDance();
+		} else if(e.getDistance() < 50){
+			gettingRammed = true;
+			fire(3);
 		} else {
-
-		double absBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
+		gettingRammed = false;
+		double relBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
         double enemyBearingDeg = e.getBearing();
 		double enemyDistance = e.getDistance();
 		double enemyHeading = e.getHeadingRadians();
@@ -68,8 +77,8 @@ public class LukeRobot extends Robot {
 		System.out.println("Conf: " + confidenceLevel);
 		
         // Calculate the predicted future x, y position of the enemy
-        double x = getX() + enemyDistance * Math.sin(absBearing);
-        double y = getY() + enemyDistance * Math.cos(absBearing);
+        double x = getX() + enemyDistance * Math.sin(relBearing);
+        double y = getY() + enemyDistance * Math.cos(relBearing);
 
         // Calculate the time it takes for the bullet to travel to the predicted position
         double bulletTime = enemyDistance / (20 - 3 * (bltPwr*confidenceLevel));
@@ -101,13 +110,16 @@ public class LukeRobot extends Robot {
     }
 
     public void onHitByBullet(HitByBulletEvent e) {
-        back(30);
+        if(!gettingRammed){
+			back(50);
+		}
     }
 
     public void onHitWall(HitWallEvent e) {
         
     }
 	
+	//Like stated earlier, if the enemy has lost all their energy, do a victory dance then shoot them
 	public void victoryDance(){
 		setAdjustGunForRobotTurn(true);
 		setAdjustRadarForRobotTurn(true);
