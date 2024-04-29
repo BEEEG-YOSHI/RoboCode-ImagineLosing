@@ -11,6 +11,7 @@ public class LukeRobot extends Robot {
 	double confidenceLevel;
 	boolean hasDanced;
 	boolean gettingRammed;
+	boolean locked;
 		
     public void run() {
         setAdjustRadarForRobotTurn(true);
@@ -18,11 +19,11 @@ public class LukeRobot extends Robot {
 		targetLocated = false;
 		hasDanced = false;
 		gettingRammed = false;
+		locked = false;
 		
         while (true) {
-			if(gettingRammed){
-			fire(3);
-			}
+			if(!gettingRammed){
+			System.out.println("not getting rammed");
 			if(Math.random() > 0.5){
 			back(50);
 			} else {
@@ -33,6 +34,12 @@ public class LukeRobot extends Robot {
 			} else {
 				turnGunRight(20);
 				turnGunLeft(20);
+			} } else if(locked){
+			System.out.println("Getting rammed, target locked, firing");
+			fire(3);
+			} else {
+			System.out.println("getting rammed, seacrching for target");
+			turnGunRight(360);
 			}
 			//System.out.println("Confidence Level: " + confidenceLevel);
         }
@@ -40,20 +47,23 @@ public class LukeRobot extends Robot {
 
     public void onScannedRobot(ScannedRobotEvent e) {
         
-		
-		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
-			//if the enemy robot has zero power, and there are no others, do a victory dance then blast em'
-			victoryDance();
-		} else if(e.getDistance() < 50){
-			gettingRammed = true;
-			fire(3);
-		} else {
-		gettingRammed = false;
 		double relBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
         double enemyBearingDeg = e.getBearing();
 		double enemyDistance = e.getDistance();
 		double enemyHeading = e.getHeadingRadians();
         double enemyVelocity = e.getVelocity();
+		
+		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
+			//if the enemy robot has zero power, and there are no others, do a victory dance then blast em'
+			victoryDance();
+		} else if(enemyDistance < 100){
+			gettingRammed = true;
+			if(enemyDistance < 75){
+			locked = true;
+			}
+		} else {
+		gettingRammed = false;
+		locked = false;
 
 
 		targetLocated = true;
