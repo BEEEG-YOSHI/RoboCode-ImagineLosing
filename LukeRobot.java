@@ -11,6 +11,7 @@ public class LukeRobot extends Robot {
 	double confidenceLevel;
 	boolean hasDanced;
 	boolean gettingRammed;
+	boolean locked;
 	
     public void run() {
         setAdjustRadarForRobotTurn(true);
@@ -18,6 +19,7 @@ public class LukeRobot extends Robot {
 		targetLocated = false;
 		hasDanced = false;
 		gettingRammed = false;
+		locked = false;                       
 		
        while (!gettingRammed) {
 	   
@@ -37,27 +39,27 @@ public class LukeRobot extends Robot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-		
+		if(e.getDistance() > 60){
 		double relBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
         double enemyBearingDeg = e.getBearing();
 		double enemyDistance = e.getDistance();
 		double enemyHeading = e.getHeadingRadians();
         double enemyVelocity = e.getVelocity();
 		
-		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
+		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced && !gettingRammed){
 			//if the enemy robot has zero power, and there are no others, do a victory dance then blast em'
 			victoryDance();
 		} else {
 		targetLocated = true;
 
-		if(!(enemyBearingDeg >= 45 && enemyBearingDeg <= 135) || !(enemyBearingDeg >= 225 && enemyBearingDeg <= 315)){
+		if(!(enemyBearingDeg >= 45 && enemyBearingDeg <= 135) || !(enemyBearingDeg >= 225 && enemyBearingDeg <= 315) && !gettingRammed){
 			if(enemyBearingDeg < 180){
 				setAdjustRadarForRobotTurn(false);
-				turnRight(enemyBearingDeg - 90);
+				turnRight(normalizeRelativeAngle(enemyBearingDeg - 90));
 				setAdjustRadarForRobotTurn(true);
 			} else {
 				setAdjustRadarForRobotTurn(false);
-				turnLeft(360 - enemyBearingDeg - 90);
+				turnLeft(normalizeRelativeAngle(360 - enemyBearingDeg - 90));
 				setAdjustRadarForRobotTurn(true);
 			}
 		}
@@ -89,7 +91,7 @@ public class LukeRobot extends Robot {
         fire((bltPwr*confidenceLevel));
 		
 		targetLocated = false; 
-    } }
+    } } }
 
     private double normalizeRelativeAngle(double angle) {
         while (angle > 180) {
@@ -118,12 +120,14 @@ public class LukeRobot extends Robot {
 		
 		System.out.println("Rammer: " + rammerBearing + "   Gun: " + gunBearing);
 		
+		if(!locked){
 		System.out.println(rammerBearing - gunBearing);
 		turnGunRight(rammerBearing);
-
+		}
+		locked = true;
 	    // Fire continuously at the ramming robot
-	    
 	    fire(3);
+		
 	    
 	}
 
