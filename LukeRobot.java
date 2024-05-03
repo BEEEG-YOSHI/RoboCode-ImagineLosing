@@ -10,18 +10,14 @@ public class LukeRobot extends Robot {
 	boolean targetLocated;
 	double confidenceLevel;
 	boolean hasDanced;
-	boolean gettingRammed;
-	boolean locked;
 	
     public void run() {
         setAdjustRadarForRobotTurn(true);
 		bltPwr = 3;
 		targetLocated = false;
-		hasDanced = false;
-		gettingRammed = false;
-		locked = false;                       
+		hasDanced = false;                     
 		
-       while (!gettingRammed) {
+       while (true) {
 	   
 			if(Math.random() > 0.5){
 			back(50);
@@ -39,20 +35,19 @@ public class LukeRobot extends Robot {
     }
 
     public void onScannedRobot(ScannedRobotEvent e) {
-		if(e.getDistance() > 60){
 		double relBearing = Math.toRadians(getHeading()) + e.getBearingRadians();
         double enemyBearingDeg = e.getBearing();
 		double enemyDistance = e.getDistance();
 		double enemyHeading = e.getHeadingRadians();
         double enemyVelocity = e.getVelocity();
 		
-		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced && !gettingRammed){
+		if(e.getEnergy() == 0 && getOthers() == 1 && !hasDanced){
 			//if the enemy robot has zero power, and there are no others, do a victory dance then blast em'
 			victoryDance();
 		} else {
 		targetLocated = true;
 
-		if(!(enemyBearingDeg >= 45 && enemyBearingDeg <= 135) || !(enemyBearingDeg >= 225 && enemyBearingDeg <= 315) && !gettingRammed){
+		if(!(enemyBearingDeg >= 45 && enemyBearingDeg <= 135) || !(enemyBearingDeg >= 225 && enemyBearingDeg <= 315)){
 			if(enemyBearingDeg < 180){
 				setAdjustRadarForRobotTurn(false);
 				turnRight(normalizeRelativeAngle(enemyBearingDeg - 90));
@@ -91,7 +86,7 @@ public class LukeRobot extends Robot {
         fire((bltPwr*confidenceLevel));
 		
 		targetLocated = false; 
-    } } }
+    } } 
 
     private double normalizeRelativeAngle(double angle) {
         while (angle > 180) {
@@ -104,30 +99,13 @@ public class LukeRobot extends Robot {
     }
 
     public void onHitByBullet(HitByBulletEvent e) {
-        if(!gettingRammed){
-			back(50);
-		}
-		
+		back(50);
     }
 	
 	public void onHitRobot(HitRobotEvent e){
 	    System.out.println("Just got Rammed");
 	    
-		gettingRammed = true;
-	    double gunBearing = getHeading() - getGunHeading(); 
-		
-	    double rammerBearing = e.getBearing();
-		
-		System.out.println("Rammer: " + rammerBearing + "   Gun: " + gunBearing);
-		
-		if(!locked){
-		System.out.println(rammerBearing - gunBearing);
-		turnGunRight(rammerBearing);
-		}
-		locked = true;
-	    // Fire continuously at the ramming robot
-	    fire(3);
-		
+		ahead(200);
 	    
 	}
 
